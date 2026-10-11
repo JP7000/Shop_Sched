@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postal Maintenance & Holiday Compliance Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div>
+                <h1>USPS Maintenance & Holiday Compliance Engine</h1>
+                <p>Automated Seniority, ODL & Holiday Waterfalls (APWU / Article 11 & 8)</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" id="exportCsvBtn">Export Schedule CSV</button>
+                <button class="btn btn-primary" id="runAuditBtn">Run Grievance Audit</button>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="roster">1. Technician Roster & Seniority</button>
+            <button class="tab-btn" data-tab="pm">2. Equipment PM Assignments</button>
+            <button class="tab-btn" data-tab="holiday">3. Holiday Schedule Matrix</button>
+            <button class="tab-btn" data-tab="audit">4. Grievance & Compliance Audit</button>
+        </nav>
+
+        <!-- TAB 1: ROSTER -->
+        <section id="roster" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Maintenance Craft Roster & Seniority Ranking</h2>
+                    <button class="btn btn-sm btn-primary" id="openAddTechModal">Add Technician</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="rosterTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Craft Level</th>
+                                <th>Tour</th>
+                                <th>Days Off (SDO)</th>
+                                <th>Seniority Date</th>
+                                <th>ODL Status</th>
+                                <th>Holiday Volunteer</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rosterTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: EQUIPMENT PM -->
+        <section id="pm" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Processing Equipment PM Assignments & Skill Validation</h2>
+                    <button class="btn btn-sm btn-primary" id="openAddPmModal">Schedule PM Task</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="pmTable">
+                        <thead>
+                            <tr>
+                                <th>Equipment ID</th>
+                                <th>Machine Type</th>
+                                <th>PM Task</th>
+                                <th>Tour</th>
+                                <th>Assigned Tech</th>
+                                <th>Craft Match</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pmTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: HOLIDAY -->
+        <section id="holiday" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>Holiday Scheduling Matrix & Pecking Order</h2>
+                        <p class="subtitle">Enforces volunteers by seniority first, then non-volunteers by inverse seniority.</p>
+                    </div>
+                    <button class="btn btn-sm btn-primary" id="autoScheduleHolidayBtn">Auto-Populate Holiday Shift</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="holidayTable">
+                        <thead>
+                            <tr>
+                                <th>Technician</th>
+                                <th>Seniority Date</th>
+                                <th>Holiday Volunteer?</th>
+                                <th>Assigned Status</th>
+                                <th>Pecking Order Rule Applied</th>
+                                <th>Grievance Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holidayTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: AUDIT -->
+        <section id="audit" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Real-Time Grievance & Contract Violation Alerts</h2>
+                    <span class="badge badge-danger" id="violationCountBadge">0 Violations Detected</span>
+                </div>
+                <div class="audit-log-container" id="auditLogContainer">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- MODAL: ADD TECH -->
+    <div class="modal" id="techModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Add Maintenance Technician</h3>
+            <form id="techForm">
+                <input type="hidden" id="techEditIndex" value="-1">
+                <div class="form-group">
+                    <label>Employee Name</label>
+                    <input type="text" id="techName" required placeholder="e.g. J. Smith">
+                </div>
+                <div class="form-group">
+                    <label>Craft Level</label>
+                    <select id="techLevel">
+                        <option value="ET-10">ET-10 (Electronic Technician)</option>
+                        <option value="MPE-09">MPE-09 (Mail Processing Equipment)</option>
+                        <option value="MM-07">MM-07 (Maintenance Mechanic)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tour</label>
+                    <select id="techTour">
+                        <option value="Tour 1">Tour 1 (Midnight)</option>
+                        <option value="Tour 2">Tour 2 (Day)</option>
+                        <option value="Tour 3">Tour 3 (Evening)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Scheduled Days Off (SDO)</label>
+                    <input type="text" id="techSdos" placeholder="e.g. Sat/Sun" required>
+                </div>
+                <div class="form-group">
+                    <label>Seniority Date (For Tie-Breaking / Pecking Order)</label>
+                    <input type="date" id="techSeniority" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label><input type="checkbox" id="techOdl"> Overtime Desired List (ODL)</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label><input type="checkbox" id="techHolidayVol"> Holiday Volunteer</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="closeTechModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Technician</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD PM -->
+    <div class="modal" id="pmModal">
+        <div class="modal-content">
+            <h3>Schedule Equipment PM Task</h3>
+            <form id="pmForm">
+                <div class="form-group">
+                    <label>Equipment ID</label>
+                    <input type="text" id="pmEquipId" required placeholder="e.g. DBCS-04">
+                </div>
+                <div class="form-group">
+                    <label>Machine Category</label>
+                    <select id="pmCategory">
+                        <option value="DBCS">DBCS (Delivery Bar Code Sorter) - Requires ET-10</option>
+                        <option value="AFCS">AFCS (Advanced Facer Canceller) - Requires ET-10</option>
+                        <option value="APPS">APPS (Automated Package Processing) - Requires MPE-09</option>
+                        <option value="DIOSS">DIOSS (Flat Sorting Machine) - Requires ET-10 / MPE-09</option>
+                        <option value="CONVEYOR">Conveyor System - Requires MM-07</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>PM Frequency / Task</label>
+                    <input type="text" id="pmTaskName" required placeholder="e.g. Weekly Optical & Transport Clean">
+                </div>
+                <div class="form-group">
+                    <label>Tour</label>
+                    <select id="pmTour">
+                        <option value="Tour 1">Tour 1</option>
+                        <option value="Tour 2">Tour 2</option>
+                        <option value="Tour 3">Tour 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Assign Technician</label>
+                    <select id="pmTechSelect"></select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="closePmModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save PM Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
