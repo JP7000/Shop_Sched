@@ -250,32 +250,40 @@ function deletePm(index) {
     renderPmTable();
 }
 
-// CSV EXPORT (RFC 4180, every field quoted, UTF-8 BOM, CRLF)
-function csvField(value) {
-    const s = (value === null || value === undefined) ? '' : String(value);
-    return '"' + s.replace(/"/g, '""') + '"';
-}
-
-function buildCsv(headers, rows) {
-    return [headers, ...rows]
-        .map(row => row.map(csvField).join(','))
-        .join('\r\n') + '\r\n';
+// EXCEL (.xlsx) EXPORT (requires the SheetJS script tag in index.html)
+function autoWidth(rows) {
+    return rows[0].map((_, col) => ({
+        wch: Math.min(60, Math.max(...rows.map(r => String(r[col] ?? '').length)) + 2)
+    }));
 }
 
 document.getElementById('exportCsvBtn').addEventListener('click', () => {
-    const headers = ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech'];
-    const rows = pmAssignments.map(pm => [
-        pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech
-    ]);
+    if (typeof XLSX === 'undefined') {
+        alert('Excel library failed to load. Check your internet connection and the SheetJS script tag in index.html.');
+        return;
+    }
 
-    const csv = buildCsv(headers, rows);
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'postal_maintenance_schedule.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
+    const pmRows = [
+        ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech'],
+        ...pmAssignments.map(pm => [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech])
+    ];
+
+    const rosterRows = [
+        ['Name', 'Craft Level', 'Tour', 'Days Off (SDO)', 'Seniority Date', 'ODL', 'Holiday Volunteer'],
+        ...technicians.map(t => [t.name, t.level, t.tour, t.sdos, t.seniority, t.odl ? 'Yes' : 'No', t.holidayVol ? 'Yes' : 'No'])
+    ];
+
+    const pmSheet = XLSX.utils.aoa_to_sheet(pmRows);
+    pmSheet['!cols'] = autoWidth(pmRows);
+
+    const rosterSheet = XLSX.utils.aoa_to_sheet(rosterRows);
+    rosterSheet['!cols'] = autoWidth(rosterRows);
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, pmSheet, 'PM Schedule');
+    XLSX.utils.book_append_sheet(wb, rosterSheet, 'Roster');
+
+    XLSX.writeFile(wb, 'postal_maintenance_schedule.xlsx');
 });
 
 document.getElementById('runAuditBtn').addEventListener('click', () => {
