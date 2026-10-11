@@ -257,33 +257,37 @@ function autoWidth(rows) {
     }));
 }
 
-document.getElementById('exportCsvBtn').addEventListener('click', () => {
-    if (typeof XLSX === 'undefined') {
-        alert('Excel library failed to load. Check your internet connection and the SheetJS script tag in index.html.');
+document.getElementById('exportExcelBtn').addEventListener('click', () => {
+    if (!window.XLSX) {
+        const error = new Error('The Excel export library did not load.');
+        console.error(error);
+        window.alert('Excel export is unavailable. Check your internet connection and reload the page.');
         return;
     }
 
-    const pmRows = [
-        ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech'],
-        ...pmAssignments.map(pm => [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech])
-    ];
+    try {
+        const pmRows = [
+            ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech'],
+            ...pmAssignments.map(pm => [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech])
+        ];
+        const rosterRows = [
+            ['Name', 'Craft Level', 'Tour', 'Days Off (SDO)', 'Seniority Date', 'ODL', 'Holiday Volunteer'],
+            ...technicians.map(t => [t.name, t.level, t.tour, t.sdos, t.seniority, t.odl ? 'Yes' : 'No', t.holidayVol ? 'Yes' : 'No'])
+        ];
 
-    const rosterRows = [
-        ['Name', 'Craft Level', 'Tour', 'Days Off (SDO)', 'Seniority Date', 'ODL', 'Holiday Volunteer'],
-        ...technicians.map(t => [t.name, t.level, t.tour, t.sdos, t.seniority, t.odl ? 'Yes' : 'No', t.holidayVol ? 'Yes' : 'No'])
-    ];
+        const pmSheet = window.XLSX.utils.aoa_to_sheet(pmRows);
+        pmSheet['!cols'] = autoWidth(pmRows);
+        const rosterSheet = window.XLSX.utils.aoa_to_sheet(rosterRows);
+        rosterSheet['!cols'] = autoWidth(rosterRows);
 
-    const pmSheet = XLSX.utils.aoa_to_sheet(pmRows);
-    pmSheet['!cols'] = autoWidth(pmRows);
-
-    const rosterSheet = XLSX.utils.aoa_to_sheet(rosterRows);
-    rosterSheet['!cols'] = autoWidth(rosterRows);
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, pmSheet, 'PM Schedule');
-    XLSX.utils.book_append_sheet(wb, rosterSheet, 'Roster');
-
-    XLSX.writeFile(wb, 'postal_maintenance_schedule.xlsx');
+        const workbook = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(workbook, pmSheet, 'PM Schedule');
+        window.XLSX.utils.book_append_sheet(workbook, rosterSheet, 'Roster');
+        window.XLSX.writeFile(workbook, 'postal_maintenance_schedule.xlsx');
+    } catch (error) {
+        console.error('Failed to export the schedule as an Excel workbook.', error);
+        window.alert('Excel export failed. See the browser console for details.');
+    }
 });
 
 document.getElementById('runAuditBtn').addEventListener('click', () => {
