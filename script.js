@@ -266,26 +266,72 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
     }
 
     try {
-        const pmRows = [
-            ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech'],
-            ...pmAssignments.map(pm => [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech])
-        ];
-        const rosterRows = [
-            ['Name', 'Craft Level', 'Tour', 'Days Off (SDO)', 'Seniority Date', 'ODL', 'Holiday Volunteer'],
-            ...technicians.map(t => [t.name, t.level, t.tour, t.sdos, t.seniority, t.odl ? 'Yes' : 'No', t.holidayVol ? 'Yes' : 'No'])
-        ];
+        const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+        let sheetName;
+        let fileSuffix;
+        let rows;
 
-        const pmSheet = window.XLSX.utils.aoa_to_sheet(pmRows);
-        pmSheet['!cols'] = autoWidth(pmRows);
-        const rosterSheet = window.XLSX.utils.aoa_to_sheet(rosterRows);
-        rosterSheet['!cols'] = autoWidth(rosterRows);
+        if (activeTab === 'roster') {
+            sheetName = 'Roster';
+            fileSuffix = 'roster';
+            rows = [
+                ['Name', 'Craft Level', 'Tour', 'Days Off (SDO)', 'Seniority Date', 'ODL', 'Holiday Volunteer'],
+                ...technicians.map(t => [t.name, t.level, t.tour, t.sdos, t.seniority, t.odl ? 'Yes' : 'No', t.holidayVol ? 'Yes' : 'No'])
+            ];
+        } else if (activeTab === 'pm') {
+            sheetName = 'PM Schedule';
+            fileSuffix = 'pm_schedule';
+            rows = [
+                ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech', 'Craft Match', 'Status'],
+                ...pmAssignments.map(pm => {
+                    const tech = technicians.find(t => t.name === pm.assignedTech);
+                    let craftMatch = 'Valid Craft Match';
+                    if (!tech) {
+                        craftMatch = 'Unassigned / Invalid Tech';
+                    } else if ((pm.category === 'DBCS' || pm.category === 'AFCS') && tech.level !== 'ET-10') {
+                        craftMatch = `Mismatch: ${pm.category} requires ET-10 (Assigned ${tech.level})`;
+                    } else if (pm.category === 'APPS' && tech.level !== 'MPE-09') {
+                        craftMatch = `Mismatch: APPS requires MPE-09 (Assigned ${tech.level})`;
+                    }
+                    return [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech, craftMatch, 'Scheduled'];
+                })
+            ];
+        } else if (activeTab === 'holiday') {
+            sheetName = 'Holiday Schedule';
+            fileSuffix = 'holiday_schedule';
+            const sortedTechs = [...technicians].sort((a, b) => new Date(a.seniority) - new Date(b.seniority));
+            rows = [
+                ['Technician', 'Seniority Date', 'Holiday Volunteer?', 'Assigned Status', 'Pecking Order Rule Applied', 'Grievance Risk'],
+                ...sortedTechs.map(tech => [
+                    `${tech.name} (${tech.level})`,
+                    tech.seniority,
+                    tech.holidayVol ? 'Yes' : 'No',
+                    tech.holidayVol ? 'Working (Volunteer)' : 'Off / Protected',
+                    tech.holidayVol ? 'Step 2: Volunteer sorted by Seniority' : 'Exempt / Non-Mandated',
+                    'No Risk'
+                ])
+            ];
+        } else if (activeTab === 'audit') {
+            sheetName = 'Audit Report';
+            fileSuffix = 'audit_report';
+            rows = [
+                ['Finding', 'Status'],
+                ...Array.from(document.querySelectorAll('#auditLogContainer .audit-alert-box'), alert => [
+                    alert.querySelector('div')?.innerText.trim() ?? '',
+                    alert.querySelector('.badge')?.innerText.trim() ?? ''
+                ])
+            ];
+        } else {
+            throw new Error('No supported dashboard tab is currently selected.');
+        }
 
+        const sheet = window.XLSX.utils.aoa_to_sheet(rows);
+        sheet['!cols'] = autoWidth(rows);
         const workbook = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(workbook, pmSheet, 'PM Schedule');
-        window.XLSX.utils.book_append_sheet(workbook, rosterSheet, 'Roster');
-        window.XLSX.writeFile(workbook, 'postal_maintenance_schedule.xlsx');
+        window.XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
+        window.XLSX.writeFile(workbook, `postal_maintenance_${fileSuffix}.xlsx`);
     } catch (error) {
-        console.error('Failed to export the schedule as an Excel workbook.', error);
+        console.error('Failed to export the current tab as an Excel workbook.', error);
         window.alert('Excel export failed. See the browser console for details.');
     }
 });
