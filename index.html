@@ -24,8 +24,9 @@
         <nav class="nav-tabs">
             <button class="tab-btn active" data-tab="roster">1. Technician Roster & Seniority</button>
             <button class="tab-btn" data-tab="pm">2. Equipment PM Assignments</button>
-            <button class="tab-btn" data-tab="holiday">3. Holiday Schedule Matrix</button>
-            <button class="tab-btn" data-tab="audit">4. Grievance & Compliance Audit</button>
+            <button class="tab-btn" data-tab="custodians">3. Custodians</button>
+            <button class="tab-btn" data-tab="holiday">4. Holiday Schedule Matrix</button>
+            <button class="tab-btn" data-tab="audit">5. Grievance & Compliance Audit</button>
         </nav>
 
         <!-- TAB 1: ROSTER -->
@@ -83,26 +84,32 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="custodian-section">
-                    <h3>Building Custodian Assignments</h3>
-                    <div class="table-responsive">
-                        <table class="data-table custodian-table" id="custodianTable">
-                            <thead>
-                                <tr>
-                                    <th>Building Section</th>
-                                    <th>Assigned Custodian(s)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="custodianTbody">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: CUSTODIANS -->
+        <section id="custodians" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Building Custodian Assignments</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table custodian-table" id="custodianTable">
+                        <thead>
+                            <tr>
+                                <th>Building Section</th>
+                                <th>Assigned Custodian(s)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="custodianTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 3: HOLIDAY -->
+        <!-- TAB 4: HOLIDAY -->
         <section id="holiday" class="tab-content">
             <div class="card">
                 <div class="card-header">
@@ -132,7 +139,7 @@
             </div>
         </section>
 
-        <!-- TAB 4: AUDIT -->
+        <!-- TAB 5: AUDIT -->
         <section id="audit" class="tab-content">
             <div class="card">
                 <div class="card-header">

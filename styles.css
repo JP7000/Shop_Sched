@@ -136,18 +136,6 @@ color: var(--text-main);
 font-weight: 600;
 }
 
-.custodian-section {
-margin-top: 24px;
-padding-top: 18px;
-border-top: 1px solid var(--border-color);
-}
-
-.custodian-section h3 {
-font-size: 1rem;
-color: var(--primary-dark);
-margin-bottom: 10px;
-}
-
 .custodian-table input {
 width: 100%;
 padding: 8px 10px;

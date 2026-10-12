@@ -351,9 +351,12 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
                     const tech = technicians.find(t => t.name === pm.assignedTech);
                     const craftMatch = getCraftMatch(pm.category, tech);
                     return [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech, craftMatch, 'Scheduled'];
-                }),
-                [],
-                ['Building Custodian Assignments'],
+                })
+            ];
+        } else if (activeTab === 'custodians') {
+            sheetName = 'Custodians';
+            fileSuffix = 'custodians';
+            rows = [
                 ['Building Section', 'Assigned Custodian(s)'],
                 ...custodialAssignments.map(assignment => [assignment.area, assignment.custodians])
             ];
@@ -388,10 +391,6 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
 
         const sheet = window.XLSX.utils.aoa_to_sheet(rows);
         sheet['!cols'] = autoWidth(rows);
-        if (activeTab === 'pm') {
-            const titleRow = pmAssignments.length + 3;
-            sheet['!merges'] = [window.XLSX.utils.decode_range(`A${titleRow}:G${titleRow}`)];
-        }
         const workbook = window.XLSX.utils.book_new();
         window.XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
         window.XLSX.writeFile(workbook, `postal_maintenance_${fileSuffix}.xlsx`);
