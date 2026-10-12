@@ -23,6 +23,16 @@ let custodialAssignments = [
     { area: 'Outdoors', custodians: '' }
 ];
 
+let custodialStaff = [
+    { name: 'Drew Sample', tour: 'Tour 1', sdos: 'Sat/Sun', seniority: '2012-05-14', odl: true, holidayVol: true },
+    { name: 'Robin Sample', tour: 'Tour 2', sdos: 'Tue/Wed', seniority: '2015-08-20', odl: false, holidayVol: false },
+    { name: 'Kendall Sample', tour: 'Tour 1', sdos: 'Sun/Mon', seniority: '2018-02-10', odl: true, holidayVol: true },
+    { name: 'Parker Sample', tour: 'Tour 3', sdos: 'Thu/Fri', seniority: '2021-11-05', odl: false, holidayVol: false },
+    { name: 'Quinn Sample', tour: 'Tour 2', sdos: 'Sat/Sun', seniority: '2008-03-30', odl: false, holidayVol: false },
+    { name: 'Reese Sample', tour: 'Tour 1', sdos: 'Mon/Tue', seniority: '2010-06-18', odl: true, holidayVol: false },
+    { name: 'Finley Sample', tour: 'Tour 3', sdos: 'Wed/Thu', seniority: '2013-09-02', odl: false, holidayVol: true }
+];
+
 // TAB NAVIGATION LOGIC
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -41,6 +51,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function initApp() {
     renderRoster();
     renderPmTable();
+    renderCustodianRoster();
     renderCustodianAssignments();
     populateTechDropdowns();
 }
@@ -139,6 +150,39 @@ function renderCustodianAssignments() {
     });
 }
 
+function renderCustodianRoster() {
+    const tbody = document.getElementById('custodianRosterTbody');
+    tbody.innerHTML = '';
+
+    custodialStaff.forEach((custodian, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${custodian.name}</strong></td>
+            <td>${custodian.tour}</td>
+            <td>${custodian.sdos}</td>
+            <td>${custodian.seniority}</td>
+            <td>${custodian.odl ? '<span class="badge badge-warning">ODL Active</span>' : 'Non-ODL'}</td>
+            <td>${custodian.holidayVol ? '<span class="badge badge-success">Volunteer</span>' : 'Non-Volunteer'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline" onclick="editCustodian(${index})">Edit</button>
+                <button class="btn btn-sm btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="deleteCustodian(${index})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateCustodianAreaAssignments(oldName, newName = '') {
+    custodialAssignments.forEach(assignment => {
+        assignment.custodians = assignment.custodians
+            .split('/')
+            .map(name => name.trim() === oldName ? newName : name.trim())
+            .filter(Boolean)
+            .join('/');
+    });
+    renderCustodianAssignments();
+}
+
 // POPULATE TECH DROPDOWN
 const MAX_MACHINES_PER_TECH = 6;
 
@@ -171,25 +215,31 @@ function renderHolidayMatrix() {
     const tbody = document.getElementById('holidayTbody');
     tbody.innerHTML = '';
 
-    // Sort volunteers by earliest seniority date (Ascending order)
-    let sortedTechs = [...technicians].sort((a, b) => new Date(a.seniority) - new Date(b.seniority));
+    const sortedStaff = getHolidayStaff();
 
-    sortedTechs.forEach(tech => {
-        let assignedStatus = tech.holidayVol ? "Working (Volunteer)" : "Off / Protected";
-        let peckingRule = tech.holidayVol ? "Step 2: Volunteer sorted by Seniority" : "Exempt / Non-Mandated";
+    sortedStaff.forEach(staff => {
+        let assignedStatus = staff.holidayVol ? "Working (Volunteer)" : "Off / Protected";
+        let peckingRule = staff.holidayVol ? "Step 2: Volunteer sorted by Seniority" : "Exempt / Non-Mandated";
         let riskBadge = '<span class="badge badge-success">No Risk</span>';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><strong>${tech.name}</strong> (${tech.level})</td>
-            <td>${tech.seniority}</td>
-            <td>${tech.holidayVol ? '<span class="badge badge-success">Yes</span>' : 'No'}</td>
+            <td><strong>${staff.name}</strong> (${staff.employeeType})</td>
+            <td>${staff.seniority}</td>
+            <td>${staff.holidayVol ? '<span class="badge badge-success">Yes</span>' : 'No'}</td>
             <td>${assignedStatus}</td>
             <td>${peckingRule}</td>
             <td>${riskBadge}</td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+function getHolidayStaff() {
+    return [
+        ...technicians.map(tech => ({ ...tech, employeeType: tech.level })),
+        ...custodialStaff.map(custodian => ({ ...custodian, employeeType: 'Custodian' }))
+    ].sort((a, b) => new Date(a.seniority) - new Date(b.seniority));
 }
 
 // GRIEVANCE & COMPLIANCE AUDIT ENGINE
@@ -231,6 +281,7 @@ function runGrievanceAudit() {
 
 // MODAL CONTROLS
 const techModal = document.getElementById('techModal');
+const custodianModal = document.getElementById('custodianModal');
 const pmModal = document.getElementById('pmModal');
 
 document.getElementById('openAddTechModal').addEventListener('click', () => {
@@ -241,6 +292,13 @@ document.getElementById('openAddTechModal').addEventListener('click', () => {
 });
 
 document.getElementById('closeTechModal').addEventListener('click', () => techModal.style.display = 'none');
+document.getElementById('openAddCustodianModal').addEventListener('click', () => {
+    document.getElementById('custodianModalTitle').textContent = 'Add Custodian';
+    document.getElementById('custodianEditIndex').value = -1;
+    document.getElementById('custodianForm').reset();
+    custodianModal.style.display = 'flex';
+});
+document.getElementById('closeCustodianModal').addEventListener('click', () => custodianModal.style.display = 'none');
 document.getElementById('openAddPmModal').addEventListener('click', () => pmModal.style.display = 'flex');
 document.getElementById('closePmModal').addEventListener('click', () => pmModal.style.display = 'none');
 document.getElementById('pmEquipId').addEventListener('input', (e) => populateTechDropdowns(e.target.value));
@@ -267,6 +325,30 @@ document.getElementById('techForm').addEventListener('submit', (e) => {
 
     techModal.style.display = 'none';
     renderRoster();
+});
+
+document.getElementById('custodianForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const index = parseInt(document.getElementById('custodianEditIndex').value);
+    const custodian = {
+        name: document.getElementById('custodianName').value.trim(),
+        tour: document.getElementById('custodianTour').value,
+        sdos: document.getElementById('custodianSdos').value.trim(),
+        seniority: document.getElementById('custodianSeniority').value,
+        odl: document.getElementById('custodianOdl').checked,
+        holidayVol: document.getElementById('custodianHolidayVol').checked
+    };
+
+    if (index === -1) {
+        custodialStaff.push(custodian);
+    } else {
+        const previousName = custodialStaff[index].name;
+        if (previousName !== custodian.name) updateCustodianAreaAssignments(previousName, custodian.name);
+        custodialStaff[index] = custodian;
+    }
+
+    custodianModal.style.display = 'none';
+    renderCustodianRoster();
 });
 
 document.getElementById('pmForm').addEventListener('submit', (e) => {
@@ -302,6 +384,26 @@ function editTech(index) {
     document.getElementById('techOdl').checked = tech.odl;
     document.getElementById('techHolidayVol').checked = tech.holidayVol;
     techModal.style.display = 'flex';
+}
+
+function editCustodian(index) {
+    const custodian = custodialStaff[index];
+    document.getElementById('custodianModalTitle').textContent = 'Edit Custodian';
+    document.getElementById('custodianEditIndex').value = index;
+    document.getElementById('custodianName').value = custodian.name;
+    document.getElementById('custodianTour').value = custodian.tour;
+    document.getElementById('custodianSdos').value = custodian.sdos;
+    document.getElementById('custodianSeniority').value = custodian.seniority;
+    document.getElementById('custodianOdl').checked = custodian.odl;
+    document.getElementById('custodianHolidayVol').checked = custodian.holidayVol;
+    custodianModal.style.display = 'flex';
+}
+
+function deleteCustodian(index) {
+    const custodian = custodialStaff[index];
+    updateCustodianAreaAssignments(custodian.name);
+    custodialStaff.splice(index, 1);
+    renderCustodianRoster();
 }
 
 function deleteTech(index) {
@@ -357,21 +459,31 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
             sheetName = 'Custodians';
             fileSuffix = 'custodians';
             rows = [
+                ['Custodian Name', 'Tour', 'Days Off (SDO)', 'Seniority Date', 'ODL (Article 8)', 'Holiday Volunteer (Article 11)'],
+                ...custodialStaff.map(custodian => [
+                    custodian.name,
+                    custodian.tour,
+                    custodian.sdos,
+                    custodian.seniority,
+                    custodian.odl ? 'Yes' : 'No',
+                    custodian.holidayVol ? 'Yes' : 'No'
+                ]),
+                [],
                 ['Building Section', 'Assigned Custodian(s)'],
                 ...custodialAssignments.map(assignment => [assignment.area, assignment.custodians])
             ];
         } else if (activeTab === 'holiday') {
             sheetName = 'Holiday Schedule';
             fileSuffix = 'holiday_schedule';
-            const sortedTechs = [...technicians].sort((a, b) => new Date(a.seniority) - new Date(b.seniority));
+            const sortedStaff = getHolidayStaff();
             rows = [
-                ['Technician', 'Seniority Date', 'Holiday Volunteer?', 'Assigned Status', 'Pecking Order Rule Applied', 'Grievance Risk'],
-                ...sortedTechs.map(tech => [
-                    `${tech.name} (${tech.level})`,
-                    tech.seniority,
-                    tech.holidayVol ? 'Yes' : 'No',
-                    tech.holidayVol ? 'Working (Volunteer)' : 'Off / Protected',
-                    tech.holidayVol ? 'Step 2: Volunteer sorted by Seniority' : 'Exempt / Non-Mandated',
+                ['Employee', 'Seniority Date', 'Holiday Volunteer?', 'Assigned Status', 'Pecking Order Rule Applied', 'Grievance Risk'],
+                ...sortedStaff.map(staff => [
+                    `${staff.name} (${staff.employeeType})`,
+                    staff.seniority,
+                    staff.holidayVol ? 'Yes' : 'No',
+                    staff.holidayVol ? 'Working (Volunteer)' : 'Off / Protected',
+                    staff.holidayVol ? 'Step 2: Volunteer sorted by Seniority' : 'Exempt / Non-Mandated',
                     'No Risk'
                 ])
             ];

@@ -91,8 +91,29 @@
         <section id="custodians" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h2>Building Custodian Assignments</h2>
+                    <h2>Custodial Staff & Building Assignments</h2>
+                    <button class="btn btn-sm btn-primary" id="openAddCustodianModal">Add Custodian</button>
                 </div>
+                <h3 class="section-heading">Custodial Staff Roster</h3>
+                <div class="table-responsive">
+                    <table class="data-table" id="custodianRosterTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Tour</th>
+                                <th>Days Off (SDO)</th>
+                                <th>Seniority Date</th>
+                                <th>ODL Status (Article 8)</th>
+                                <th>Holiday Volunteer (Article 11)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="custodianRosterTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <h3 class="section-heading">Building Section Assignments</h3>
                 <div class="table-responsive">
                     <table class="data-table custodian-table" id="custodianTable">
                         <thead>
@@ -197,6 +218,46 @@
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" id="closeTechModal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Technician</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD CUSTODIAN -->
+    <div class="modal" id="custodianModal">
+        <div class="modal-content">
+            <h3 id="custodianModalTitle">Add Custodian</h3>
+            <form id="custodianForm">
+                <input type="hidden" id="custodianEditIndex" value="-1">
+                <div class="form-group">
+                    <label>Employee Name</label>
+                    <input type="text" id="custodianName" required placeholder="e.g. Drew Sample">
+                </div>
+                <div class="form-group">
+                    <label>Tour</label>
+                    <select id="custodianTour">
+                        <option value="Tour 1">Tour 1 (Midnight)</option>
+                        <option value="Tour 2">Tour 2 (Day)</option>
+                        <option value="Tour 3">Tour 3 (Evening)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Scheduled Days Off (SDO)</label>
+                    <input type="text" id="custodianSdos" placeholder="e.g. Sat/Sun" required>
+                </div>
+                <div class="form-group">
+                    <label>Seniority Date</label>
+                    <input type="date" id="custodianSeniority" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label><input type="checkbox" id="custodianOdl"> Overtime Desired List (Article 8)</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label><input type="checkbox" id="custodianHolidayVol"> Holiday Volunteer (Article 11)</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="closeCustodianModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Custodian</button>
                 </div>
             </form>
         </div>

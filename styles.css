@@ -144,6 +144,12 @@ border-radius: 4px;
 font: inherit;
 }
 
+.section-heading {
+margin: 18px 0 10px;
+font-size: 1rem;
+color: var(--primary-dark);
+}
+
 .btn {
 padding: 8px 14px;
 border-radius: 6px;
