@@ -12,6 +12,17 @@ let pmAssignments = [
     { equipId: "APPS-03", category: "APPS", taskName: "Bi-Weekly Induction Jam Clear Check", tour: "Tour 1", assignedTech: "A. Wilson" }
 ];
 
+let custodialAssignments = [
+    { area: 'Front', custodians: 'Rivera' },
+    { area: 'Back', custodians: 'Wade' },
+    { area: 'Caf', custodians: 'Youssef' },
+    { area: 'DBCS', custodians: 'Attallah/Luz' },
+    { area: 'APBS', custodians: '' },
+    { area: 'Rec', custodians: 'Alex/Yang' },
+    { area: 'Parking Lot', custodians: '' },
+    { area: 'Outdoors', custodians: '' }
+];
+
 // TAB NAVIGATION LOGIC
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -30,6 +41,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function initApp() {
     renderRoster();
     renderPmTable();
+    renderCustodianAssignments();
     populateTechDropdowns();
 }
 
@@ -97,6 +109,32 @@ function renderPmTable() {
                 <button class="btn btn-sm btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="deletePm(${index})">Remove</button>
             </td>
         `;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderCustodianAssignments() {
+    const tbody = document.getElementById('custodianTbody');
+    tbody.innerHTML = '';
+
+    custodialAssignments.forEach((assignment, index) => {
+        const tr = document.createElement('tr');
+        const areaCell = document.createElement('td');
+        const custodiansCell = document.createElement('td');
+        const input = document.createElement('input');
+
+        areaCell.textContent = assignment.area;
+        input.type = 'text';
+        input.value = assignment.custodians;
+        input.placeholder = 'Enter custodian name(s)';
+        input.setAttribute('aria-label', `${assignment.area} custodian assignment`);
+        input.addEventListener('input', (event) => {
+            custodialAssignments[index].custodians = event.target.value;
+        });
+
+        custodiansCell.appendChild(input);
+        tr.appendChild(areaCell);
+        tr.appendChild(custodiansCell);
         tbody.appendChild(tr);
     });
 }
@@ -313,7 +351,11 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
                     const tech = technicians.find(t => t.name === pm.assignedTech);
                     const craftMatch = getCraftMatch(pm.category, tech);
                     return [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech, craftMatch, 'Scheduled'];
-                })
+                }),
+                [],
+                ['Building Custodian Assignments'],
+                ['Building Section', 'Assigned Custodian(s)'],
+                ...custodialAssignments.map(assignment => [assignment.area, assignment.custodians])
             ];
         } else if (activeTab === 'holiday') {
             sheetName = 'Holiday Schedule';
@@ -346,6 +388,10 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
 
         const sheet = window.XLSX.utils.aoa_to_sheet(rows);
         sheet['!cols'] = autoWidth(rows);
+        if (activeTab === 'pm') {
+            const titleRow = pmAssignments.length + 3;
+            sheet['!merges'] = [window.XLSX.utils.decode_range(`A${titleRow}:G${titleRow}`)];
+        }
         const workbook = window.XLSX.utils.book_new();
         window.XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
         window.XLSX.writeFile(workbook, `postal_maintenance_${fileSuffix}.xlsx`);
