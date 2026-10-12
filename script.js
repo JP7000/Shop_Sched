@@ -13,12 +13,12 @@ let pmAssignments = [
 ];
 
 let custodialAssignments = [
-    { area: 'Front', custodians: 'Rivera' },
-    { area: 'Back', custodians: 'Wade' },
-    { area: 'Caf', custodians: 'Youssef' },
-    { area: 'DBCS', custodians: 'Attallah/Luz' },
+    { area: 'Front', custodians: 'Drew Sample' },
+    { area: 'Back', custodians: 'Robin Sample' },
+    { area: 'Caf', custodians: 'Kendall Sample' },
+    { area: 'DBCS', custodians: 'Parker Sample/Quinn Sample' },
     { area: 'APBS', custodians: '' },
-    { area: 'Rec', custodians: 'Alex/Yang' },
+    { area: 'Rec', custodians: 'Reese Sample/Finley Sample' },
     { area: 'Parking Lot', custodians: '' },
     { area: 'Outdoors', custodians: '' }
 ];
