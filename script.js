@@ -59,27 +59,30 @@ function renderRoster() {
 }
 
 // RENDER PM TABLE WITH SKILL VALIDATION
+function getCraftMatch(category, tech) {
+    if (!tech) return 'Unassigned / Invalid Tech';
+
+    const requiredCrafts = {
+        DBCS: ['ET-10'],
+        AFCS: ['ET-10'],
+        AFSM: ['ET-10', 'MPE-09'],
+        APPS: ['MPE-09'],
+        SIPS: ['MPE-09', 'MM-07'],
+        Building: ['BEM-09']
+    }[category];
+
+    if (!requiredCrafts || requiredCrafts.includes(tech.level)) return 'Valid Craft Match';
+    return `Mismatch: ${category} requires ${requiredCrafts.join(' / ')} (Assigned ${tech.level})`;
+}
+
 function renderPmTable() {
     const tbody = document.getElementById('pmTbody');
     tbody.innerHTML = '';
 
     pmAssignments.forEach((pm, index) => {
         const tech = technicians.find(t => t.name === pm.assignedTech);
-        let validMatch = true;
-        let warningText = "Valid Craft Match";
-
-        if (tech) {
-            if ((pm.category === 'DBCS' || pm.category === 'AFCS') && tech.level !== 'ET-10') {
-                validMatch = false;
-                warningText = `Mismatch: ${pm.category} requires ET-10 (Assigned ${tech.level})`;
-            } else if (pm.category === 'APPS' && tech.level !== 'MPE-09') {
-                validMatch = false;
-                warningText = `Mismatch: APPS requires MPE-09 (Assigned ${tech.level})`;
-            }
-        } else {
-            validMatch = false;
-            warningText = "Unassigned / Invalid Tech";
-        }
+        const craftMatch = getCraftMatch(pm.category, tech);
+        const validMatch = craftMatch === 'Valid Craft Match';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -88,7 +91,7 @@ function renderPmTable() {
             <td>${pm.taskName}</td>
             <td>${pm.tour}</td>
             <td>${pm.assignedTech}</td>
-            <td><span class="badge ${validMatch ? 'badge-success' : 'badge-danger'}">${warningText}</span></td>
+            <td><span class="badge ${validMatch ? 'badge-success' : 'badge-danger'}">${craftMatch}</span></td>
             <td><span class="badge badge-info">Scheduled</span></td>
             <td>
                 <button class="btn btn-sm btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="deletePm(${index})">Remove</button>
@@ -160,18 +163,17 @@ function runGrievanceAudit() {
     // Check 1: PM Craft Qualification Check
     pmAssignments.forEach(pm => {
         const tech = technicians.find(t => t.name === pm.assignedTech);
-        if (tech) {
-            if ((pm.category === 'DBCS' || pm.category === 'AFCS') && tech.level !== 'ET-10') {
-                violations++;
-                container.innerHTML += `
-                    <div class="audit-alert-box audit-alert-danger">
-                        <div>
-                            <strong>Craft Qualification Grievance Risk (${pm.equipId}):</strong>
-                            Assigned technician ${tech.name} (${tech.level}) is not qualified for ${pm.category} maintenance (Requires ET-10).
-                        </div>
-                        <span class="badge badge-danger">Article 38 Violation</span>
-                    </div>`;
-            }
+        const craftMatch = getCraftMatch(pm.category, tech);
+        if (tech && craftMatch !== 'Valid Craft Match') {
+            violations++;
+            container.innerHTML += `
+                <div class="audit-alert-box audit-alert-danger">
+                    <div>
+                        <strong>Craft Qualification Grievance Risk (${pm.equipId}):</strong>
+                        Assigned technician ${tech.name} (${tech.level}) is not qualified for ${pm.category} maintenance. ${craftMatch}
+                    </div>
+                    <span class="badge badge-danger">Article 38 Violation</span>
+                </div>`;
         }
     });
 
@@ -309,14 +311,7 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
                 ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech', 'Craft Match', 'Status'],
                 ...pmAssignments.map(pm => {
                     const tech = technicians.find(t => t.name === pm.assignedTech);
-                    let craftMatch = 'Valid Craft Match';
-                    if (!tech) {
-                        craftMatch = 'Unassigned / Invalid Tech';
-                    } else if ((pm.category === 'DBCS' || pm.category === 'AFCS') && tech.level !== 'ET-10') {
-                        craftMatch = `Mismatch: ${pm.category} requires ET-10 (Assigned ${tech.level})`;
-                    } else if (pm.category === 'APPS' && tech.level !== 'MPE-09') {
-                        craftMatch = `Mismatch: APPS requires MPE-09 (Assigned ${tech.level})`;
-                    }
+                    const craftMatch = getCraftMatch(pm.category, tech);
                     return [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech, craftMatch, 'Scheduled'];
                 })
             ];
