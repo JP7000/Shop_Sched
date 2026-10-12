@@ -289,6 +289,7 @@
                         <option value="APPS">APPS (Automated Package Processing) - Requires MPE-09</option>
                         <option value="SIPS">SIPS - Requires MPE-09 / MM-07</option>
                         <option value="DIOSS">DIOSS (Flat Sorting Machine) - Requires ET-10 / MPE-09</option>
+                        <option value="CIOSS">CIOSS - Requires ET-10 / MPE-09 / MM-07 staff</option>
                         <option value="CONVEYOR">Conveyor System - Requires MM-07</option>
                         <option value="Building">Building - Requires BEM-09</option>
                     </select>
@@ -306,8 +307,9 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Assign Technician</label>
-                    <select id="pmTechSelect"></select>
+                    <label>Assign Technician(s)</label>
+                    <select id="pmTechSelect" multiple size="5" aria-describedby="pmTechHelp"></select>
+                    <small id="pmTechHelp">Select ET-10, MPE-09, and MM-07 staff for CIOSS assignments.</small>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" id="closePmModal">Cancel</button>

@@ -83,7 +83,8 @@ function renderRoster() {
 
 // RENDER PM TABLE WITH SKILL VALIDATION
 function getCraftMatch(category, tech) {
-    if (!tech) return 'Unassigned / Invalid Tech';
+    const assignedTechs = Array.isArray(tech) ? tech : [tech].filter(Boolean);
+    if (assignedTechs.length === 0) return 'Unassigned / Invalid Tech';
 
     const requiredCrafts = {
         DBCS: ['ET-10'],
@@ -94,8 +95,15 @@ function getCraftMatch(category, tech) {
         Building: ['BEM-09']
     }[category];
 
-    if (!requiredCrafts || requiredCrafts.includes(tech.level)) return 'Valid Craft Match';
-    return `Mismatch: ${category} requires ${requiredCrafts.join(' / ')} (Assigned ${tech.level})`;
+    if (category === 'CIOSS') {
+        const requiredTeam = ['ET-10', 'MPE-09', 'MM-07'];
+        const missingCrafts = requiredTeam.filter(craft => !assignedTechs.some(member => member.level === craft));
+        if (missingCrafts.length > 0) return `Mismatch: ${category} requires ET-10, MPE-09, and MM-07 staff (Missing ${missingCrafts.join(' / ')})`;
+        return 'Valid Craft Match';
+    }
+
+    if (!requiredCrafts || assignedTechs.some(member => requiredCrafts.includes(member.level))) return 'Valid Craft Match';
+    return `Mismatch: ${category} requires ${requiredCrafts.join(' / ')} (Assigned ${assignedTechs.map(member => member.level).join(' / ')})`;
 }
 
 function renderPmTable() {
@@ -103,8 +111,9 @@ function renderPmTable() {
     tbody.innerHTML = '';
 
     pmAssignments.forEach((pm, index) => {
-        const tech = technicians.find(t => t.name === pm.assignedTech);
-        const craftMatch = getCraftMatch(pm.category, tech);
+        const assignedNames = pm.assignedTechs || [pm.assignedTech].filter(Boolean);
+        const assignedTechs = assignedNames.map(name => technicians.find(t => t.name === name)).filter(Boolean);
+        const craftMatch = getCraftMatch(pm.category, assignedTechs);
         const validMatch = craftMatch === 'Valid Craft Match';
 
         const tr = document.createElement('tr');
@@ -113,7 +122,7 @@ function renderPmTable() {
             <td>${pm.category}</td>
             <td>${pm.taskName}</td>
             <td>${pm.tour}</td>
-            <td>${pm.assignedTech}</td>
+            <td>${assignedNames.join(', ')}</td>
             <td><span class="badge ${validMatch ? 'badge-success' : 'badge-danger'}">${craftMatch}</span></td>
             <td><span class="badge badge-info">Scheduled</span></td>
             <td>
@@ -188,13 +197,13 @@ const MAX_MACHINES_PER_TECH = 6;
 
 function getEquipmentIdsForTech(techName) {
     return new Set(pmAssignments
-        .filter(pm => pm.assignedTech === techName)
+        .filter(pm => (pm.assignedTechs || [pm.assignedTech]).includes(techName))
         .map(pm => pm.equipId.trim().toUpperCase()));
 }
 
 function populateTechDropdowns(equipId = '') {
     const select = document.getElementById('pmTechSelect');
-    const currentTech = select.value;
+    const currentTechs = [...select.selectedOptions].map(option => option.value);
     const normalizedEquipId = equipId.trim().toUpperCase();
     select.innerHTML = '';
     technicians.forEach(tech => {
@@ -205,9 +214,9 @@ function populateTechDropdowns(equipId = '') {
         opt.disabled = equipmentIds.size >= MAX_MACHINES_PER_TECH && !equipmentIds.has(normalizedEquipId);
         select.appendChild(opt);
     });
-    if ([...select.options].some(option => option.value === currentTech && !option.disabled)) {
-        select.value = currentTech;
-    }
+    [...select.options].forEach(option => {
+        option.selected = currentTechs.includes(option.value) && !option.disabled;
+    });
 }
 
 // HOLIDAY MATRIX PECKING ORDER LOGIC
@@ -250,15 +259,16 @@ function runGrievanceAudit() {
 
     // Check 1: PM Craft Qualification Check
     pmAssignments.forEach(pm => {
-        const tech = technicians.find(t => t.name === pm.assignedTech);
-        const craftMatch = getCraftMatch(pm.category, tech);
-        if (tech && craftMatch !== 'Valid Craft Match') {
+        const assignedNames = pm.assignedTechs || [pm.assignedTech].filter(Boolean);
+        const assignedTechs = assignedNames.map(name => technicians.find(t => t.name === name)).filter(Boolean);
+        const craftMatch = getCraftMatch(pm.category, assignedTechs);
+        if (assignedTechs.length > 0 && craftMatch !== 'Valid Craft Match') {
             violations++;
             container.innerHTML += `
                 <div class="audit-alert-box audit-alert-danger">
                     <div>
                         <strong>Craft Qualification Grievance Risk (${pm.equipId}):</strong>
-                        Assigned technician ${tech.name} (${tech.level}) is not qualified for ${pm.category} maintenance. ${craftMatch}
+                        Assigned staff ${assignedTechs.map(member => `${member.name} (${member.level})`).join(', ')} do not meet ${pm.category} requirements. ${craftMatch}
                     </div>
                     <span class="badge badge-danger">Article 38 Violation</span>
                 </div>`;
@@ -354,19 +364,29 @@ document.getElementById('custodianForm').addEventListener('submit', (e) => {
 document.getElementById('pmForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const equipId = document.getElementById('pmEquipId').value.trim();
-    const assignedTech = document.getElementById('pmTechSelect').value;
-    const assignedEquipmentIds = getEquipmentIdsForTech(assignedTech);
-    if (!assignedTech || (assignedEquipmentIds.size >= MAX_MACHINES_PER_TECH && !assignedEquipmentIds.has(equipId.toUpperCase()))) {
-        window.alert(`${assignedTech || 'This technician'} already has the maximum of ${MAX_MACHINES_PER_TECH} machines assigned.`);
+    const assignedTechs = [...document.getElementById('pmTechSelect').selectedOptions].map(option => option.value);
+    const assignedTechnicians = assignedTechs.map(name => technicians.find(tech => tech.name === name)).filter(Boolean);
+    const category = document.getElementById('pmCategory').value;
+    const craftMatch = getCraftMatch(category, assignedTechnicians);
+    if (!assignedTechs.length || (category === 'CIOSS' && craftMatch !== 'Valid Craft Match')) {
+        window.alert(category === 'CIOSS' ? craftMatch : 'Select at least one technician.');
+        return;
+    }
+    const overCapacityTech = assignedTechs.find(name => {
+        const assignedEquipmentIds = getEquipmentIdsForTech(name);
+        return assignedEquipmentIds.size >= MAX_MACHINES_PER_TECH && !assignedEquipmentIds.has(equipId.toUpperCase());
+    });
+    if (overCapacityTech) {
+        window.alert(`${overCapacityTech} already has the maximum of ${MAX_MACHINES_PER_TECH} machines assigned.`);
         return;
     }
 
     pmAssignments.push({
         equipId,
-        category: document.getElementById('pmCategory').value,
+        category,
         taskName: document.getElementById('pmTaskName').value,
         tour: document.getElementById('pmTour').value,
-        assignedTech
+        assignedTechs
     });
     pmModal.style.display = 'none';
     renderPmTable();
@@ -450,9 +470,10 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
             rows = [
                 ['Equipment ID', 'Category', 'Task', 'Tour', 'Assigned Tech', 'Craft Match', 'Status'],
                 ...pmAssignments.map(pm => {
-                    const tech = technicians.find(t => t.name === pm.assignedTech);
-                    const craftMatch = getCraftMatch(pm.category, tech);
-                    return [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech, craftMatch, 'Scheduled'];
+                    const assignedNames = pm.assignedTechs || [pm.assignedTech].filter(Boolean);
+                    const assignedTechs = assignedNames.map(name => technicians.find(t => t.name === name)).filter(Boolean);
+                    const craftMatch = getCraftMatch(pm.category, assignedTechs);
+                    return [pm.equipId, pm.category, pm.taskName, pm.tour, assignedNames.join(', '), craftMatch, 'Scheduled'];
                 })
             ];
         } else if (activeTab === 'custodian-roster') {
