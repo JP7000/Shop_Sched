@@ -99,15 +99,30 @@ function renderPmTable() {
 }
 
 // POPULATE TECH DROPDOWN
-function populateTechDropdowns() {
+const MAX_MACHINES_PER_TECH = 6;
+
+function getEquipmentIdsForTech(techName) {
+    return new Set(pmAssignments
+        .filter(pm => pm.assignedTech === techName)
+        .map(pm => pm.equipId.trim().toUpperCase()));
+}
+
+function populateTechDropdowns(equipId = '') {
     const select = document.getElementById('pmTechSelect');
+    const currentTech = select.value;
+    const normalizedEquipId = equipId.trim().toUpperCase();
     select.innerHTML = '';
     technicians.forEach(tech => {
+        const equipmentIds = getEquipmentIdsForTech(tech.name);
         const opt = document.createElement('option');
         opt.value = tech.name;
-        opt.textContent = `${tech.name} (${tech.level} - ${tech.tour})`;
+        opt.textContent = `${tech.name} (${tech.level} - ${tech.tour}, ${equipmentIds.size}/${MAX_MACHINES_PER_TECH} machines)`;
+        opt.disabled = equipmentIds.size >= MAX_MACHINES_PER_TECH && !equipmentIds.has(normalizedEquipId);
         select.appendChild(opt);
     });
+    if ([...select.options].some(option => option.value === currentTech && !option.disabled)) {
+        select.value = currentTech;
+    }
 }
 
 // HOLIDAY MATRIX PECKING ORDER LOGIC
@@ -188,6 +203,7 @@ document.getElementById('openAddTechModal').addEventListener('click', () => {
 document.getElementById('closeTechModal').addEventListener('click', () => techModal.style.display = 'none');
 document.getElementById('openAddPmModal').addEventListener('click', () => pmModal.style.display = 'flex');
 document.getElementById('closePmModal').addEventListener('click', () => pmModal.style.display = 'none');
+document.getElementById('pmEquipId').addEventListener('input', (e) => populateTechDropdowns(e.target.value));
 
 // FORM SUBMISSIONS
 document.getElementById('techForm').addEventListener('submit', (e) => {
@@ -215,12 +231,20 @@ document.getElementById('techForm').addEventListener('submit', (e) => {
 
 document.getElementById('pmForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    const equipId = document.getElementById('pmEquipId').value.trim();
+    const assignedTech = document.getElementById('pmTechSelect').value;
+    const assignedEquipmentIds = getEquipmentIdsForTech(assignedTech);
+    if (!assignedTech || (assignedEquipmentIds.size >= MAX_MACHINES_PER_TECH && !assignedEquipmentIds.has(equipId.toUpperCase()))) {
+        window.alert(`${assignedTech || 'This technician'} already has the maximum of ${MAX_MACHINES_PER_TECH} machines assigned.`);
+        return;
+    }
+
     pmAssignments.push({
-        equipId: document.getElementById('pmEquipId').value,
+        equipId,
         category: document.getElementById('pmCategory').value,
         taskName: document.getElementById('pmTaskName').value,
         tour: document.getElementById('pmTour').value,
-        assignedTech: document.getElementById('pmTechSelect').value
+        assignedTech
     });
     pmModal.style.display = 'none';
     renderPmTable();
