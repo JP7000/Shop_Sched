@@ -195,23 +195,28 @@ function updateCustodianAreaAssignments(oldName, newName = '') {
 // POPULATE TECH DROPDOWN
 const MAX_MACHINES_PER_TECH = 6;
 
+function parseEquipmentIds(value) {
+    return new Set(value.split(',').map(equipId => equipId.trim().toUpperCase()).filter(Boolean));
+}
+
 function getEquipmentIdsForTech(techName) {
     return new Set(pmAssignments
         .filter(pm => (pm.assignedTechs || [pm.assignedTech]).includes(techName))
-        .map(pm => pm.equipId.trim().toUpperCase()));
+        .flatMap(pm => [...parseEquipmentIds(pm.equipId)]));
 }
 
 function populateTechDropdowns(equipId = '') {
     const select = document.getElementById('pmTechSelect');
     const currentTechs = [...select.selectedOptions].map(option => option.value);
-    const normalizedEquipId = equipId.trim().toUpperCase();
+    const enteredEquipmentIds = parseEquipmentIds(equipId);
     select.innerHTML = '';
     technicians.forEach(tech => {
         const equipmentIds = getEquipmentIdsForTech(tech.name);
+        const additionalMachineCount = [...enteredEquipmentIds].filter(id => !equipmentIds.has(id)).length;
         const opt = document.createElement('option');
         opt.value = tech.name;
         opt.textContent = `${tech.name} (${tech.level} - ${tech.tour}, ${equipmentIds.size}/${MAX_MACHINES_PER_TECH} machines)`;
-        opt.disabled = equipmentIds.size >= MAX_MACHINES_PER_TECH && !equipmentIds.has(normalizedEquipId);
+        opt.disabled = equipmentIds.size + additionalMachineCount > MAX_MACHINES_PER_TECH || (equipmentIds.size >= MAX_MACHINES_PER_TECH && enteredEquipmentIds.size === 0);
         select.appendChild(opt);
     });
     [...select.options].forEach(option => {
@@ -364,17 +369,19 @@ document.getElementById('custodianForm').addEventListener('submit', (e) => {
 document.getElementById('pmForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const equipId = document.getElementById('pmEquipId').value.trim();
+    const requestedEquipmentIds = parseEquipmentIds(equipId);
     const assignedTechs = [...document.getElementById('pmTechSelect').selectedOptions].map(option => option.value);
     const assignedTechnicians = assignedTechs.map(name => technicians.find(tech => tech.name === name)).filter(Boolean);
     const category = document.getElementById('pmCategory').value;
     const craftMatch = getCraftMatch(category, assignedTechnicians);
-    if (!assignedTechs.length || (category === 'CIOSS' && craftMatch !== 'Valid Craft Match')) {
-        window.alert(category === 'CIOSS' ? craftMatch : 'Select at least one technician.');
+    if (!requestedEquipmentIds.size || !assignedTechs.length || (category === 'CIOSS' && craftMatch !== 'Valid Craft Match')) {
+        window.alert(!requestedEquipmentIds.size ? 'Enter at least one equipment ID.' : category === 'CIOSS' ? craftMatch : 'Select at least one technician.');
         return;
     }
     const overCapacityTech = assignedTechs.find(name => {
         const assignedEquipmentIds = getEquipmentIdsForTech(name);
-        return assignedEquipmentIds.size >= MAX_MACHINES_PER_TECH && !assignedEquipmentIds.has(equipId.toUpperCase());
+        const additionalMachineCount = [...requestedEquipmentIds].filter(id => !assignedEquipmentIds.has(id)).length;
+        return assignedEquipmentIds.size + additionalMachineCount > MAX_MACHINES_PER_TECH;
     });
     if (overCapacityTech) {
         window.alert(`${overCapacityTech} already has the maximum of ${MAX_MACHINES_PER_TECH} machines assigned.`);
