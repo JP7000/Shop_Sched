@@ -91,14 +91,15 @@ function getCraftMatch(category, tech) {
         AFCS: ['ET-10'],
         AFSM: ['ET-10', 'MPE-09'],
         APPS: ['MPE-09'],
-        SIPS: ['MPE-09', 'MM-07'],
+        SIPS: ['MPE-09'],
+        FRS: ['MPE-09', 'ET-10'],
         Building: ['BEM-09']
     }[category];
 
     if (category === 'CIOSS') {
-        const requiredTeam = ['ET-10', 'MPE-09', 'MM-07'];
+        const requiredTeam = ['ET-10', 'MPE-09'];
         const missingCrafts = requiredTeam.filter(craft => !assignedTechs.some(member => member.level === craft));
-        if (missingCrafts.length > 0) return `Mismatch: ${category} requires ET-10, MPE-09, and MM-07 staff (Missing ${missingCrafts.join(' / ')})`;
+        if (missingCrafts.length > 0) return `Mismatch: ${category} requires ET-10 and MPE-09 staff (Missing ${missingCrafts.join(' / ')})`;
         return 'Valid Craft Match';
     }
 
