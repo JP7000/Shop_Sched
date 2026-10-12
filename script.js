@@ -455,9 +455,9 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
                     return [pm.equipId, pm.category, pm.taskName, pm.tour, pm.assignedTech, craftMatch, 'Scheduled'];
                 })
             ];
-        } else if (activeTab === 'custodians') {
-            sheetName = 'Custodians';
-            fileSuffix = 'custodians';
+        } else if (activeTab === 'custodian-roster') {
+            sheetName = 'Custodian Roster';
+            fileSuffix = 'custodian_roster';
             rows = [
                 ['Custodian Name', 'Tour', 'Days Off (SDO)', 'Seniority Date', 'ODL (Article 8)', 'Holiday Volunteer (Article 11)'],
                 ...custodialStaff.map(custodian => [
@@ -467,8 +467,12 @@ document.getElementById('exportExcelBtn').addEventListener('click', () => {
                     custodian.seniority,
                     custodian.odl ? 'Yes' : 'No',
                     custodian.holidayVol ? 'Yes' : 'No'
-                ]),
-                [],
+                ])
+            ];
+        } else if (activeTab === 'custodian-assignments') {
+            sheetName = 'Custodian Assignments';
+            fileSuffix = 'custodian_assignments';
+            rows = [
                 ['Building Section', 'Assigned Custodian(s)'],
                 ...custodialAssignments.map(assignment => [assignment.area, assignment.custodians])
             ];

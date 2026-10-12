@@ -24,9 +24,10 @@
         <nav class="nav-tabs">
             <button class="tab-btn active" data-tab="roster">1. Technician Roster & Seniority</button>
             <button class="tab-btn" data-tab="pm">2. Equipment PM Assignments</button>
-            <button class="tab-btn" data-tab="custodians">3. Custodians</button>
-            <button class="tab-btn" data-tab="holiday">4. Holiday Schedule Matrix</button>
-            <button class="tab-btn" data-tab="audit">5. Grievance & Compliance Audit</button>
+            <button class="tab-btn" data-tab="custodian-roster">3. Custodian Roster & Seniority</button>
+            <button class="tab-btn" data-tab="custodian-assignments">4. Custodial Building Assignments</button>
+            <button class="tab-btn" data-tab="holiday">5. Holiday Schedule Matrix</button>
+            <button class="tab-btn" data-tab="audit">6. Grievance & Compliance Audit</button>
         </nav>
 
         <!-- TAB 1: ROSTER -->
@@ -87,14 +88,13 @@
             </div>
         </section>
 
-        <!-- TAB 3: CUSTODIANS -->
-        <section id="custodians" class="tab-content">
+        <!-- TAB 3: CUSTODIAN ROSTER -->
+        <section id="custodian-roster" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h2>Custodial Staff & Building Assignments</h2>
+                    <h2>Custodial Staff Roster & Seniority</h2>
                     <button class="btn btn-sm btn-primary" id="openAddCustodianModal">Add Custodian</button>
                 </div>
-                <h3 class="section-heading">Custodial Staff Roster</h3>
                 <div class="table-responsive">
                     <table class="data-table" id="custodianRosterTable">
                         <thead>
@@ -113,7 +113,15 @@
                         </tbody>
                     </table>
                 </div>
-                <h3 class="section-heading">Building Section Assignments</h3>
+            </div>
+        </section>
+
+        <!-- TAB 4: CUSTODIAN ASSIGNMENTS -->
+        <section id="custodian-assignments" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Custodial Building Section Assignments</h2>
+                </div>
                 <div class="table-responsive">
                     <table class="data-table custodian-table" id="custodianTable">
                         <thead>
@@ -130,7 +138,7 @@
             </div>
         </section>
 
-        <!-- TAB 4: HOLIDAY -->
+        <!-- TAB 5: HOLIDAY -->
         <section id="holiday" class="tab-content">
             <div class="card">
                 <div class="card-header">
@@ -160,7 +168,7 @@
             </div>
         </section>
 
-        <!-- TAB 5: AUDIT -->
+        <!-- TAB 6: AUDIT -->
         <section id="audit" class="tab-content">
             <div class="card">
                 <div class="card-header">
